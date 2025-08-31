@@ -1,0 +1,39 @@
+from flask import Flask, render_template_string, send_from_directory
+import os
+import pandas as pd
+
+app = Flask(_name_)
+output_dir = os.path.join(os.getcwd(), "outputs")
+
+@app.route("/")
+def index():
+    content = "<h1>X-Sentiment Project Outputs</h1>"
+
+    # Text file
+    report_path = os.path.join(output_dir, "sentiment_report.txt")
+    if os.path.exists(report_path):
+        with open(report_path) as f:
+            content += f"<h2>Sentiment Report</h2><pre>{f.read()}</pre>"
+
+    # Excel / CSV files
+    for file in os.listdir(output_dir):
+        if file.endswith((".xlsx", ".csv")):
+            try:
+                df = pd.read_excel(os.path.join(output_dir, file)) if file.endswith(".xlsx") else pd.read_csv(os.path.join(output_dir, file))
+                content += f"<h2>{file}</h2>" + df.head(10).to_html(classes='table', border=1)
+            except Exception as e:
+                content += f"<p>Could not read {file}: {e}</p>"
+
+    # Images
+    for file in os.listdir(output_dir):
+        if file.endswith(".png"):
+            content += f"<h2>{file}</h2><img src='/outputs/{file}' width='500'><br>"
+
+    return render_template_string(content)
+
+@app.route("/outputs/<path:filename>")
+def outputs(filename):
+    return send_from_directory(output_dir, filename)
+
+if _name_ == "_main_":
+    app.run(debug=True)
